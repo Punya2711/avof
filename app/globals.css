@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 44 40% 96%;
+    --foreground: 140 25% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 140 25% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 140 25% 12%;
+    --primary: 140 35% 18%;
+    --primary-foreground: 44 40% 96%;
+    --secondary: 44 30% 88%;
+    --secondary-foreground: 140 25% 12%;
+    --muted: 44 25% 92%;
+    --muted-foreground: 140 10% 35%;
+    --accent: 80 35% 55%;
+    --accent-foreground: 140 35% 12%;
+    --destructive: 0 75% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 44 20% 82%;
+    --input: 44 20% 82%;
+    --ring: 140 35% 18%;
+    --radius: 0.75rem;
+  }
+  html { scroll-behavior: smooth; }
+  body { @apply bg-background text-foreground antialiased; font-feature-settings: 'cv11', 'ss01'; }
+}
+
+@layer utilities {
+  .glass { backdrop-filter: blur(14px); background: rgba(250, 246, 236, 0.72); }
+  .glass-dark { backdrop-filter: blur(14px); background: rgba(20, 37, 25, 0.6); }
+  .text-balance { text-wrap: balance; }
+  .grain { background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.12 0 0 0 0 0.22 0 0 0 0 0.15 0 0 0 0.5 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/></svg>"); }
+  .leaf-divider { -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent); mask-image: linear-gradient(to bottom, black 80%, transparent); }
+}
+
+.card-hover { transition: all .45s cubic-bezier(.22,.36,.16,1); }
+.card-hover:hover { transform: translateY(-8px); box-shadow: 0 25px 50px -12px rgba(31, 58, 43, 0.25); }
+
+.btn-glow { box-shadow: 0 8px 30px -8px rgba(31,58,43,.35); transition: all .3s; }
+.btn-glow:hover { box-shadow: 0 12px 40px -8px rgba(31,58,43,.55); transform: translateY(-2px); }
+
+.shimmer { background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.35) 50%, transparent 70%); background-size: 200% 100%; animation: shimmer 2.5s infinite; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
