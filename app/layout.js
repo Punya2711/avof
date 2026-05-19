@@ -1,6 +1,7 @@
 import './globals.css';
 import { Outfit, Playfair_Display } from 'next/font/google';
 import { CartProvider } from '@/lib/cart-context';
+import { AuthProvider } from '@/lib/auth-context';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Toaster } from 'sonner';
@@ -17,12 +18,14 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${outfit.variable} ${playfair.variable}`}>
       <body className="min-h-screen bg-cream text-forest font-sans">
-        <CartProvider>
-          <Navbar />
-          <main className="min-h-[60vh]">{children}</main>
-          <Footer />
-          <Toaster position="top-center" richColors />
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            <Navbar />
+            <main className="min-h-[60vh]">{children}</main>
+            <Footer />
+            <Toaster position="top-center" richColors />
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

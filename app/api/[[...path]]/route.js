@@ -1,25 +1,19 @@
 import { NextResponse } from 'next/server';
-import { MongoClient } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
+import { cookies } from 'next/headers';
 import { PRODUCTS, CATEGORIES, getProductById } from '@/lib/products';
-
-const uri = process.env.MONGO_URL;
-const dbName = process.env.DB_NAME || 'avani_organics';
-let client; let dbPromise;
-async function getDb() {
-  if (!dbPromise) {
-    client = new MongoClient(uri);
-    dbPromise = client.connect().then(c => c.db(dbName));
-  }
-  return dbPromise;
-}
+import { getDb, hashPassword, comparePassword, signToken, verifyToken, setAuthCookie, clearAuthCookie, getCurrentUser, getCurrentAdmin, ensureSeedAdmin } from '@/lib/auth';
 
 function json(data, status = 200) { return NextResponse.json(data, { status }); }
+
+// Seed admin on first import
+ensureSeedAdmin().catch(e => console.error('seed admin err', e));
 
 async function GET(request, { params }) {
   const path = (params?.path || []).join('/');
   try {
     if (path === '' || path === 'health') return json({ ok: true, service: 'avani-organics' });
+
     if (path === 'products') {
       const { searchParams } = new URL(request.url);
       const cat = searchParams.get('category');
@@ -41,16 +35,42 @@ async function GET(request, { params }) {
       const similar = PRODUCTS.filter(x => x.category === p.category && x.id !== p.id).slice(0, 8);
       return json({ product: p, similar });
     }
-    if (path === 'admin/orders') {
-      const { searchParams } = new URL(request.url);
-      if (searchParams.get('password') !== (process.env.ADMIN_PASSWORD || 'avani2025')) return json({ error: 'Unauthorized' }, 401);
+
+    // ===== USER AUTH =====
+    if (path === 'auth/me') {
+      const user = await getCurrentUser();
+      return json({ user });
+    }
+    if (path === 'auth/orders') {
+      const user = await getCurrentUser();
+      if (!user) return json({ error: 'Unauthorized' }, 401);
       const db = await getDb();
-      const orders = await db.collection('orders').find({}).sort({ created_at: -1 }).limit(200).toArray();
+      const orders = await db.collection('orders').find({ user_id: user.user_id }).sort({ created_at: -1 }).limit(100).toArray();
       return json({ orders: orders.map(({ _id, ...rest }) => rest) });
     }
+
+    // ===== ADMIN AUTH =====
+    if (path === 'admin/me') {
+      const admin = await getCurrentAdmin();
+      return json({ admin });
+    }
+    if (path === 'admin/orders') {
+      const admin = await getCurrentAdmin();
+      if (!admin) return json({ error: 'Unauthorized' }, 401);
+      const db = await getDb();
+      const orders = await db.collection('orders').find({}).sort({ created_at: -1 }).limit(500).toArray();
+      return json({ orders: orders.map(({ _id, ...rest }) => rest) });
+    }
+    if (path === 'admin/users') {
+      const admin = await getCurrentAdmin();
+      if (!admin) return json({ error: 'Unauthorized' }, 401);
+      const db = await getDb();
+      const users = await db.collection('users').find({}, { projection: { password_hash: 0 } }).sort({ created_at: -1 }).limit(500).toArray();
+      return json({ users: users.map(({ _id, ...rest }) => rest) });
+    }
     if (path === 'admin/csv') {
-      const { searchParams } = new URL(request.url);
-      if (searchParams.get('password') !== (process.env.ADMIN_PASSWORD || 'avani2025')) return new Response('Unauthorized', { status: 401 });
+      const admin = await getCurrentAdmin();
+      if (!admin) return new Response('Unauthorized', { status: 401 });
       const db = await getDb();
       const orders = await db.collection('orders').find({}).sort({ created_at: -1 }).toArray();
       const head = 'order_id,date,customer,phone,email,address,products,total,status\n';
@@ -61,6 +81,7 @@ async function GET(request, { params }) {
       }).join('\n');
       return new Response(head + rows, { headers: { 'Content-Type': 'text/csv', 'Content-Disposition': 'attachment; filename=avani-orders.csv' } });
     }
+
     return json({ error: 'Not found' }, 404);
   } catch (e) {
     console.error('API GET error:', e);
@@ -72,10 +93,72 @@ async function POST(request, { params }) {
   const path = (params?.path || []).join('/');
   try {
     const body = await request.json().catch(() => ({}));
+
+    // ===== USER AUTH =====
+    if (path === 'auth/signup') {
+      const { name, email, password, phone } = body;
+      if (!name || !email || !password) return json({ error: 'Name, email & password required' }, 400);
+      if (password.length < 6) return json({ error: 'Password must be at least 6 characters' }, 400);
+      const db = await getDb();
+      const lower = email.toLowerCase();
+      const exists = await db.collection('users').findOne({ email: lower });
+      if (exists) return json({ error: 'Email already registered' }, 400);
+      const user_id = uuidv4();
+      const password_hash = await hashPassword(password);
+      await db.collection('users').insertOne({ _id: uuidv4(), user_id, name, email: lower, phone: phone || '', password_hash, created_at: new Date().toISOString() });
+      const token = signToken({ uid: user_id, role: 'user' });
+      setAuthCookie(token);
+      return json({ ok: true, user: { user_id, name, email: lower, phone: phone || '' } });
+    }
+    if (path === 'auth/login') {
+      const { email, password } = body;
+      if (!email || !password) return json({ error: 'Email & password required' }, 400);
+      const db = await getDb();
+      const u = await db.collection('users').findOne({ email: email.toLowerCase() });
+      if (!u) return json({ error: 'Invalid credentials' }, 401);
+      const ok = await comparePassword(password, u.password_hash);
+      if (!ok) return json({ error: 'Invalid credentials' }, 401);
+      const token = signToken({ uid: u.user_id, role: 'user' });
+      setAuthCookie(token);
+      return json({ ok: true, user: { user_id: u.user_id, name: u.name, email: u.email, phone: u.phone || '' } });
+    }
+    if (path === 'auth/logout') {
+      clearAuthCookie('avani_token');
+      return json({ ok: true });
+    }
+
+    // ===== ADMIN AUTH =====
+    if (path === 'admin/login') {
+      const { email, password } = body;
+      const db = await getDb();
+      const a = await db.collection('admins').findOne({ email: (email || '').toLowerCase() });
+      if (!a) return json({ error: 'Invalid credentials' }, 401);
+      const ok = await comparePassword(password, a.password_hash);
+      if (!ok) return json({ error: 'Invalid credentials' }, 401);
+      const token = signToken({ email: a.email, role: 'admin' });
+      setAuthCookie(token, 'avani_admin_token');
+      return json({ ok: true, admin: { email: a.email } });
+    }
+    if (path === 'admin/logout') {
+      clearAuthCookie('avani_admin_token');
+      return json({ ok: true });
+    }
+    if (path?.startsWith('admin/order/') && path.endsWith('/status')) {
+      const admin = await getCurrentAdmin();
+      if (!admin) return json({ error: 'Unauthorized' }, 401);
+      const order_id = path.split('/')[2];
+      const db = await getDb();
+      await db.collection('orders').updateOne({ order_id }, { $set: { status: body.status } });
+      return json({ ok: true });
+    }
+
+    // ===== ORDERS =====
     if (path === 'orders') {
+      const user = await getCurrentUser();
       const order_id = 'AVN-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
       const order = {
         order_id,
+        user_id: user ? user.user_id : null,
         name: body.name, phone: body.phone, email: body.email,
         address: body.address, city: body.city, pincode: body.pincode, notes: body.notes || '',
         items: body.items || [], subtotal: body.subtotal, delivery: body.delivery,
@@ -92,17 +175,6 @@ async function POST(request, { params }) {
     if (path === 'newsletter') {
       const db = await getDb();
       await db.collection('newsletter').insertOne({ _id: uuidv4(), email: body.email, created_at: new Date().toISOString() });
-      return json({ ok: true });
-    }
-    if (path === 'admin/login') {
-      const ok = body.password === (process.env.ADMIN_PASSWORD || 'avani2025');
-      return json({ ok });
-    }
-    if (path?.startsWith('admin/order/') && path.endsWith('/status')) {
-      const order_id = path.split('/')[2];
-      if (body.password !== (process.env.ADMIN_PASSWORD || 'avani2025')) return json({ error: 'Unauthorized' }, 401);
-      const db = await getDb();
-      await db.collection('orders').updateOne({ order_id }, { $set: { status: body.status } });
       return json({ ok: true });
     }
     return json({ error: 'Not found' }, 404);

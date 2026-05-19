@@ -61,12 +61,33 @@
 #====================================================================================================
 
 user_problem_statement: |
-  Avani Organics — premium animated organic grocery e-commerce site for Karnataka brand (BHOOMI Sustainable Development Society).
-  ~165 products across 12 categories (Traditional Rice, Millets, Pulses, Flours, Oils, Sweeteners, Salts, Dry Fruits, Spices, Super Foods, Breakfast, Dairy).
-  Auto-generated INR prices, Cart, Checkout (COD + Razorpay demo), Admin dashboard with CSV export.
+  Avani Organics — premium organic grocery site. Recently added:
+  - Real product photos from Drive folder downloaded to /app/public/products/ (46 photos served as static assets)
+  - Full email+password JWT auth for users (signup, login, logout, me, my orders)
+  - Separate email+password JWT auth for admin (login, logout, me) - admin seeded on boot with admin@avaniorganic.com / Avani@2025
+  - Admin endpoints now require JWT cookie (avani_admin_token) instead of query password
+  - Orders attach user_id automatically when user is logged in
 
 backend:
-  - task: "GET /api/products — list, filter by category, search by q, sort"
+  - task: "Existing product/category/order/newsletter endpoints still working"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: true
+        -agent: "testing"
+        -comment: "Previously verified - all 13 endpoints passed."
+        -working: "NA"
+        -agent: "main"
+        -comment: "Re-verify after refactor since admin auth changed from query-password to cookie-JWT."
+        -working: true
+        -agent: "testing"
+        -comment: "REGRESSION PASSED. Tested GET /api/health, GET /api/products?category=Millets, GET /api/categories, POST /api/newsletter. All working correctly."
+
+  - task: "POST /api/auth/signup — user registration with bcrypt + JWT cookie"
     implemented: true
     working: true
     file: "app/api/[[...path]]/route.js"
@@ -76,11 +97,12 @@ backend:
     status_history:
         -working: "NA"
         -agent: "main"
-        -comment: "Returns {products, total}. Verified curl returns Traditional Rice list."
+        -comment: "Body {name, email, password, phone?}. Validates length>=6, lowercases email, hashes pwd, sets avani_token cookie. Should return {ok, user}. Duplicate email -> 400."
         -working: true
         -agent: "testing"
-        -comment: "✅ All tests passed: (1) Products list returns 164 items with correct structure. (2) Category filter for 'Traditional Rice' returns 23 items, all correctly filtered. (3) Search query 'ragi' returns 4 items, all containing 'ragi' in name/category. (4) Sort by price-asc works correctly (first item ₹25). (5) Sort by price-desc works correctly (first item ₹2105)."
-  - task: "GET /api/categories"
+        -comment: "PASSED. Signup creates user, returns {ok:true, user:{user_id, name, email, phone}}, sets avani_token cookie. Duplicate email returns 400. Password <6 chars returns 400."
+
+  - task: "POST /api/auth/login — user login"
     implemented: true
     working: true
     file: "app/api/[[...path]]/route.js"
@@ -90,11 +112,12 @@ backend:
     status_history:
         -working: "NA"
         -agent: "main"
-        -comment: "Returns 12 categories. Curl confirmed."
+        -comment: "Body {email, password}. Valid -> {ok, user} + cookie. Invalid -> 401."
         -working: true
         -agent: "testing"
-        -comment: "✅ Test passed: Returns exactly 12 categories including Traditional Rice, Millets, Pulses, Flours, Oils & Oil Seeds, Sweeteners, Salts, Dry Fruits, Spices, Super Foods, Breakfast, Dairy."
-  - task: "GET /api/product/:id with similar"
+        -comment: "PASSED. Login with correct credentials returns {ok:true, user}, sets avani_token cookie. Wrong password returns 401."
+
+  - task: "GET /api/auth/me — current user via cookie"
     implemented: true
     working: true
     file: "app/api/[[...path]]/route.js"
@@ -104,25 +127,12 @@ backend:
     status_history:
         -working: "NA"
         -agent: "main"
-        -comment: "Returns 404 for invalid id, product + similar for valid."
+        -comment: "With cookie -> {user: {user_id, name, email, phone, created_at}}. Without -> {user: null}."
         -working: true
         -agent: "testing"
-        -comment: "✅ Both tests passed: (1) Valid product ID returns product details with up to 8 similar products from same category. (2) Invalid product ID returns 404 with error message."
-  - task: "POST /api/orders — create order, persist in MongoDB"
-    implemented: true
-    working: true
-    file: "app/api/[[...path]]/route.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-        -working: "NA"
-        -agent: "main"
-        -comment: "Generates AVN-* order_id. Stores in db.orders. Returns {ok, order_id, order}."
-        -working: true
-        -agent: "testing"
-        -comment: "✅ Test passed: Order created successfully with realistic data (name: Rajesh Kumar, phone: 9876543210, email: rajesh.kumar@example.com). Generated order_id format AVN-MPCK0JZN-JYEF. Order persisted in MongoDB and retrievable via admin endpoint."
-  - task: "POST /api/newsletter"
+        -comment: "PASSED. With cookie returns user object with all fields including created_at. Without cookie returns {user: null}."
+
+  - task: "POST /api/auth/logout — clear cookie"
     implemented: true
     working: true
     file: "app/api/[[...path]]/route.js"
@@ -132,11 +142,12 @@ backend:
     status_history:
         -working: "NA"
         -agent: "main"
-        -comment: "Subscribes email; stores in newsletter collection."
+        -comment: "Clears avani_token. Then /api/auth/me should return null."
         -working: true
         -agent: "testing"
-        -comment: "✅ Test passed: Newsletter subscription successful with email priya.sharma@example.com. Returns {ok: true}."
-  - task: "Admin: login / list orders / CSV export / update status"
+        -comment: "PASSED. Logout returns {ok:true}, clears cookie. Subsequent /api/auth/me returns {user: null}."
+
+  - task: "GET /api/auth/orders — user's order history"
     implemented: true
     working: true
     file: "app/api/[[...path]]/route.js"
@@ -146,28 +157,133 @@ backend:
     status_history:
         -working: "NA"
         -agent: "main"
-        -comment: "Password protected (ADMIN_PASSWORD=avani2025). GET /api/admin/orders, GET /api/admin/csv, POST /api/admin/order/:order_id/status, POST /api/admin/login."
+        -comment: "Requires auth cookie. Place an order while logged in (user_id should attach), then this returns it."
         -working: true
         -agent: "testing"
-        -comment: "✅ All admin tests passed: (1) Login with correct password returns {ok:true}, wrong password returns {ok:false}. (2) GET /api/admin/orders with correct password returns orders list, wrong password returns 401. (3) GET /api/admin/csv with correct password returns CSV with proper Content-Type header and data rows, wrong password returns 401. (4) POST /api/admin/order/:order_id/status successfully updates order status to 'shipped' and persists in database."
+        -comment: "PASSED. Returns user's orders with user_id attached. Order placed while logged in appears in list. Without cookie returns 401."
 
-frontend:
-  - task: "Full site UI"
+  - task: "POST /api/admin/login — admin auth"
     implemented: true
-    working: "NA"
-    file: "app/page.js"
+    working: true
+    file: "app/api/[[...path]]/route.js"
     stuck_count: 0
     priority: "high"
     needs_retesting: false
     status_history:
         -working: "NA"
         -agent: "main"
-        -comment: "All pages render 200. To be tested manually by user first."
+        -comment: "Default admin admin@avaniorganic.com / Avani@2025 is seeded on boot. Body {email, password}. Sets avani_admin_token cookie. Wrong creds -> 401."
+        -working: true
+        -agent: "testing"
+        -comment: "PASSED. Admin login with correct credentials returns {ok:true, admin:{email}}, sets avani_admin_token cookie. Wrong password returns 401."
+
+  - task: "GET /api/admin/me — admin session check"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: "With admin cookie -> {admin: {email}}. Without -> {admin: null}."
+        -working: true
+        -agent: "testing"
+        -comment: "PASSED. With admin cookie returns {admin:{email}}. After logout returns {admin: null}."
+
+  - task: "GET /api/admin/orders — list all orders (cookie auth)"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: "No more ?password=. Uses cookie now. Without admin cookie -> 401."
+        -working: true
+        -agent: "testing"
+        -comment: "PASSED. With admin cookie returns all orders. Without cookie returns 401. Cookie-based auth working correctly."
+
+  - task: "GET /api/admin/users — list registered users"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: "Returns users without password_hash. Requires admin cookie."
+        -working: true
+        -agent: "testing"
+        -comment: "PASSED. Returns users list, confirmed NO password_hash field in any user object. Without cookie returns 401."
+
+  - task: "GET /api/admin/csv — CSV export (cookie auth)"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: "Returns text/csv. Requires admin cookie."
+        -working: true
+        -agent: "testing"
+        -comment: "PASSED. Returns text/csv with correct Content-Type header. CSV has proper header row and data rows."
+
+  - task: "POST /api/admin/order/:order_id/status — update order status (cookie auth)"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: "Body {status}. Requires admin cookie."
+        -working: true
+        -agent: "testing"
+        -comment: "PASSED. Updates order status to 'shipped', verified status persists in subsequent GET /api/admin/orders."
+
+  - task: "POST /api/admin/logout"
+    implemented: true
+    working: true
+    file: "app/api/[[...path]]/route.js"
+    stuck_count: 0
+    priority: "low"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: "Clears avani_admin_token."
+        -working: true
+        -agent: "testing"
+        -comment: "PASSED. Logout returns {ok:true}, clears admin cookie. Subsequent /api/admin/me returns {admin: null}."
+
+frontend:
+  - task: "Full site UI + auth pages"
+    implemented: true
+    working: "NA"
+    file: "app/page.js, app/login/page.js, app/signup/page.js, app/account/page.js, app/admin/login/page.js, app/admin/page.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: "User testing — not auto-tested unless asked."
 
 metadata:
   created_by: "main_agent"
-  version: "1.0"
-  test_sequence: 1
+  version: "1.2"
+  test_sequence: 2
   run_ui: false
 
 test_plan:
@@ -178,6 +294,70 @@ test_plan:
 
 agent_communication:
     -agent: "main"
-    -message: "Avani Organics MVP built. ~165 products seeded, full UI with Home/Shop/Product/Cart/Checkout/About/Admin. Backend uses MongoDB for orders & newsletter. Please test all backend endpoints with realistic payloads — especially POST /api/orders and admin password-protected endpoints (password=avani2025)."
+    -message: |
+      AUTH SYSTEM ADDED. Please test the new auth flow with cookie-based JWT (instead of the previous ?password= query). Use a CookieJar in your HTTP client (requests.Session()) so cookies persist between calls.
+      
+      Flow to test:
+      1. POST /api/auth/signup with {name, email, password, phone} — captures avani_token cookie
+      2. GET /api/auth/me — should return that user
+      3. POST /api/orders with cart items — order should attach user_id silently
+      4. GET /api/auth/orders — should list the order
+      5. POST /api/auth/logout — clears cookie
+      6. GET /api/auth/me — should return {user: null}
+      7. Try logging in same user via POST /api/auth/login — should work
+      8. Negative: signup with duplicate email -> 400; login with wrong password -> 401; auth/orders without cookie -> 401
+      
+      Admin flow (use a SEPARATE requests.Session()):
+      9. POST /api/admin/login with {email: "admin@avaniorganic.com", password: "Avani@2025"} — should succeed (seeded on boot)
+      10. GET /api/admin/me — returns {admin: {email}}
+      11. GET /api/admin/orders — returns all orders (including the user's order from step 3)
+      12. GET /api/admin/users — returns the user from step 1 WITHOUT password_hash field
+      13. POST /api/admin/order/{order_id}/status with {status: "shipped"} — updates
+      14. GET /api/admin/csv — returns text/csv with proper Content-Type
+      15. Negative: admin endpoints without cookie -> 401; login with wrong password -> 401
+      
+      Also regression-test existing endpoints:
+      - GET /api/health, /api/products, /api/products?category=Millets, /api/product/:id, /api/categories, POST /api/newsletter
     -agent: "testing"
-    -message: "✅ BACKEND TESTING COMPLETE - ALL TESTS PASSED (13/13). Comprehensive testing performed on all endpoints with positive and negative test cases. All endpoints working correctly: Health check, Categories (12), Products list (164 items), Category filtering, Search, Sorting (price-asc/desc), Product details with similar items, Order creation with MongoDB persistence, Newsletter subscription, Admin authentication, Admin orders list with auth, CSV export with proper headers, and Order status updates. Test file: /app/backend_test.py. No critical issues found. Backend is production-ready."
+    -message: |
+      ✅ ALL AUTH TESTS PASSED (25/25 - 100% SUCCESS RATE)
+      
+      Comprehensive testing completed using requests.Session() with cookie persistence:
+      
+      USER AUTH FLOW (7 tests):
+      ✅ POST /api/auth/signup - Creates user, sets avani_token cookie, returns user object
+      ✅ GET /api/auth/me - Returns logged-in user with all fields
+      ✅ POST /api/orders - Order placed with user_id attached automatically
+      ✅ GET /api/auth/orders - Returns user's orders with user_id field
+      ✅ POST /api/auth/logout - Clears cookie successfully
+      ✅ GET /api/auth/me (after logout) - Returns {user: null}
+      ✅ POST /api/auth/login - Re-login successful with cookie set
+      
+      NEGATIVE USER CASES (4 tests):
+      ✅ Duplicate email signup → 400 "Email already registered"
+      ✅ Short password (<6 chars) → 400
+      ✅ Wrong password login → 401
+      ✅ GET /api/auth/orders without cookie → 401
+      
+      ADMIN AUTH FLOW (7 tests):
+      ✅ POST /api/admin/login - Admin login successful, sets avani_admin_token
+      ✅ GET /api/admin/me - Returns {admin: {email}}
+      ✅ GET /api/admin/orders - Returns all orders including test order
+      ✅ GET /api/admin/users - Returns users WITHOUT password_hash field (security verified)
+      ✅ POST /api/admin/order/:id/status - Updates status to "shipped", persists correctly
+      ✅ GET /api/admin/csv - Returns text/csv with correct Content-Type and data
+      ✅ POST /api/admin/logout - Clears admin cookie, subsequent /api/admin/me returns null
+      
+      NEGATIVE ADMIN CASES (3 tests):
+      ✅ Wrong admin password → 401
+      ✅ GET /api/admin/orders without cookie → 401
+      ✅ GET /api/admin/users without cookie → 401
+      
+      REGRESSION TESTS (4 tests):
+      ✅ GET /api/health - Working
+      ✅ GET /api/products?category=Millets - Returns 23 Millets products
+      ✅ GET /api/categories - Returns 12 categories
+      ✅ POST /api/newsletter - Working
+      
+      Test file: /app/backend_auth_test.py
+      All backend APIs are working correctly. No issues found.

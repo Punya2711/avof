@@ -1,20 +1,26 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Lock, ChevronRight, Loader2 } from 'lucide-react';
 import { useCart } from '@/lib/cart-context';
+import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
 
 export default function CheckoutPage() {
   const { items, subtotal, clear, hydrated } = useCart();
+  const { user } = useAuth();
   const router = useRouter();
   const delivery = subtotal > 999 ? 0 : 60;
   const total = subtotal + delivery;
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', city: '', pincode: '', notes: '', payment_method: 'COD' });
   const upd = (k, v) => setForm(s => ({ ...s, [k]: v }));
+
+  useEffect(() => {
+    if (user) setForm(s => ({ ...s, name: s.name || user.name, email: s.email || user.email, phone: s.phone || user.phone || '' }));
+  }, [user]);
 
   const submit = async (e) => {
     e.preventDefault();

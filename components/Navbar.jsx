@@ -2,8 +2,9 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, Search, Menu, X, Leaf, User, MapPin } from 'lucide-react';
+import { ShoppingCart, Search, Menu, X, Leaf, User, MapPin, LogOut, Package } from 'lucide-react';
 import { useCart } from '@/lib/cart-context';
+import { useAuth } from '@/lib/auth-context';
 
 const LINKS = [
   { href: '/', label: 'Home' },
@@ -16,8 +17,10 @@ const LINKS = [
 
 export default function Navbar() {
   const { count } = useCart();
+  const { user, logout } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [userMenu, setUserMenu] = useState(false);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
     onScroll(); window.addEventListener('scroll', onScroll);
@@ -62,7 +65,31 @@ export default function Navbar() {
               <ShoppingCart className="w-4 h-4" />
               {count > 0 && <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-1 -right-1 bg-terracotta text-cream text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">{count}</motion.span>}
             </Link>
-            <button className="hidden md:flex w-9 h-9 rounded-full hover:bg-beige/60 items-center justify-center transition"><User className="w-4 h-4" /></button>
+            <div className="hidden md:block relative">
+              {user ? (
+                <>
+                  <button onClick={() => setUserMenu(v => !v)} className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full hover:bg-beige/60 transition">
+                    <span className="w-7 h-7 rounded-full bg-forest text-cream flex items-center justify-center text-xs font-bold">{user.name[0]?.toUpperCase()}</span>
+                    <span className="text-xs font-medium text-forest hidden lg:block">{user.name.split(' ')[0]}</span>
+                  </button>
+                  <AnimatePresence>
+                    {userMenu && (
+                      <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
+                        className="absolute right-0 top-full mt-2 w-56 bg-white border border-beige rounded-2xl shadow-xl p-2 z-50">
+                        <div className="px-3 py-2 border-b border-beige mb-1">
+                          <div className="font-semibold text-forest text-sm">{user.name}</div>
+                          <div className="text-xs text-moss truncate">{user.email}</div>
+                        </div>
+                        <Link href="/account" onClick={() => setUserMenu(false)} className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-beige/60 text-sm text-forest"><Package className="w-4 h-4" /> My orders</Link>
+                        <button onClick={async () => { setUserMenu(false); await logout(); }} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-terracotta/10 text-sm text-terracotta"><LogOut className="w-4 h-4" /> Logout</button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </>
+              ) : (
+                <Link href="/login" className="text-xs font-semibold text-forest border border-forest/40 rounded-full px-3.5 py-1.5 hover:bg-forest hover:text-cream transition">Login</Link>
+              )}
+            </div>
             <button onClick={() => setOpen(true)} className="lg:hidden w-9 h-9 rounded-full hover:bg-beige/60 flex items-center justify-center"><Menu className="w-5 h-5" /></button>
           </div>
         </div>

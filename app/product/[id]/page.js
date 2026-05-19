@@ -38,7 +38,7 @@ export default function ProductPage({ params }) {
             {product.discount > 0 && <span className="absolute top-4 right-4 bg-terracotta text-cream text-sm font-bold px-3 py-1.5 rounded-full">-{product.discount}%</span>}
           </div>
           <div className="grid grid-cols-4 gap-2">
-            {[product.image, product.image, product.image, product.image].map((s, i) => (
+            {(product.gallery || [product.image]).map((s, i) => (
               <div key={i} className="aspect-square rounded-xl overflow-hidden border border-beige hover:border-olive cursor-pointer"><img src={s} className="w-full h-full object-cover" /></div>
             ))}
           </div>
