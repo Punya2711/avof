@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Script from 'next/script';
 import { motion } from 'framer-motion';
 import { Lock, ChevronRight, Loader2 } from 'lucide-react';
 import { useCart } from '@/lib/cart-context';
@@ -22,11 +23,59 @@ export default function CheckoutPage() {
     if (user) setForm(s => ({ ...s, name: s.name || user.name, email: s.email || user.email, phone: s.phone || user.phone || '' }));
   }, [user]);
 
+  const validate = () => {
+    const errors = [];
+    if (!form.name || form.name.trim().length < 2) errors.push('Please enter your full name');
+    if (!/^[6-9]\d{9}$/.test(form.phone.replace(/\s/g, ''))) errors.push('Enter a valid 10-digit Indian phone number');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.push('Enter a valid email address');
+    if (!form.address || form.address.trim().length < 10) errors.push('Address must be at least 10 characters');
+    if (!form.city || form.city.trim().length < 2) errors.push('Please enter your city');
+    if (!/^\d{6}$/.test(form.pincode)) errors.push('Pincode must be exactly 6 digits');
+    return errors;
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     if (items.length === 0) { toast.error('Your cart is empty'); return; }
+    const errors = validate();
+    if (errors.length) { errors.forEach(err => toast.error(err)); return; }
+    if (loading) return; // prevent double submit
     setLoading(true);
     try {
+      if (form.payment_method === 'RAZORPAY') {
+        // 1) Create razorpay order on server
+        const r = await fetch('/api/razorpay/order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: total, receipt: 'avn_' + Date.now() }) });
+        const d = await r.json();
+        if (!d.ok) { toast.error(d.error || 'Payment setup failed'); setLoading(false); return; }
+        // 2) Open Razorpay checkout
+        const options = {
+          key: d.key_id, amount: d.amount, currency: d.currency, order_id: d.order_id,
+          name: 'Avani Organics', description: `Order from ${form.name || 'Avani customer'}`,
+          image: '/leaf-icon.png',
+          prefill: { name: form.name, email: form.email, contact: form.phone },
+          notes: { address: `${form.address}, ${form.city} - ${form.pincode}` },
+          theme: { color: '#1f3a2b' },
+          handler: async (resp) => {
+            // 3) Verify signature on server and persist order
+            const v = await fetch('/api/razorpay/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+              razorpay_order_id: resp.razorpay_order_id,
+              razorpay_payment_id: resp.razorpay_payment_id,
+              razorpay_signature: resp.razorpay_signature,
+              order_payload: { ...form, items, subtotal, delivery, total },
+            }) });
+            const vd = await v.json();
+            if (vd.ok) { clear(); router.push(`/order-success?id=${vd.order_id}`); }
+            else toast.error('Payment verification failed');
+            setLoading(false);
+          },
+          modal: { ondismiss: () => { toast.info('Payment cancelled'); setLoading(false); } },
+        };
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', (resp) => { toast.error('Payment failed: ' + (resp.error?.description || '')); setLoading(false); });
+        rzp.open();
+        return;
+      }
+      // COD flow (existing)
       const res = await fetch('/api/orders', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, items, subtotal, delivery, total }),
@@ -34,7 +83,7 @@ export default function CheckoutPage() {
       const data = await res.json();
       if (data.ok) { clear(); router.push(`/order-success?id=${data.order_id}`); }
       else toast.error(data.error || 'Failed to place order');
-    } catch (err) { toast.error('Network error'); } finally { setLoading(false); }
+    } catch (err) { toast.error('Network error'); console.error(err); } finally { setLoading(false); }
   };
 
   if (!hydrated) return <div className="py-32 text-center text-moss">Loading...</div>;
@@ -79,7 +128,7 @@ export default function CheckoutPage() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white border border-beige rounded-2xl p-6">
             <div className="font-display text-2xl text-forest mb-5">2. Payment Method</div>
             <div className="grid md:grid-cols-2 gap-3">
-              {[{ k: 'COD', l: 'Cash on Delivery', d: 'Pay when you receive' }, { k: 'RAZORPAY', l: 'UPI / Card / Netbanking', d: 'Secure online payment (Razorpay) — demo' }].map(m => (
+              {[{ k: 'COD', l: 'Cash on Delivery', d: 'Pay when you receive' }, { k: 'RAZORPAY', l: 'UPI / Card / Netbanking', d: 'Secure Razorpay payment — instant confirmation' }].map(m => (
                 <label key={m.k} className={`block cursor-pointer rounded-xl border-2 p-4 transition ${form.payment_method === m.k ? 'border-forest bg-cream' : 'border-beige hover:border-olive'}`}>
                   <input type="radio" name="pm" checked={form.payment_method === m.k} onChange={() => upd('payment_method', m.k)} className="sr-only" />
                   <div className="font-semibold text-forest">{m.l}</div>

@@ -3,8 +3,10 @@ import { Suspense, useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Filter, Search, X } from 'lucide-react';
-import { PRODUCTS, CATEGORIES } from '@/lib/products';
+import { PRODUCTS, CATEGORIES, getGroupedProducts } from '@/lib/products';
 import ProductCard from '@/components/ProductCard';
+
+const ALL_GROUPED = getGroupedProducts();
 
 function ShopInner() {
   const sp = useSearchParams();
@@ -17,12 +19,12 @@ function ShopInner() {
   useEffect(() => { setQ(sp.get('q') || ''); setCat(sp.get('category') || 'all'); }, [sp]);
 
   const filtered = useMemo(() => {
-    let list = [...PRODUCTS];
+    let list = [...ALL_GROUPED];
     if (cat !== 'all') list = list.filter(p => p.category === cat);
     if (q) { const ql = q.toLowerCase(); list = list.filter(p => p.name.toLowerCase().includes(ql) || p.category.toLowerCase().includes(ql)); }
-    list = list.filter(p => p.price <= maxPrice);
-    if (sort === 'price-asc') list.sort((a, b) => a.price - b.price);
-    if (sort === 'price-desc') list.sort((a, b) => b.price - a.price);
+    list = list.filter(p => (p.min_price || p.price) <= maxPrice);
+    if (sort === 'price-asc') list.sort((a, b) => (a.min_price || a.price) - (b.min_price || b.price));
+    if (sort === 'price-desc') list.sort((a, b) => (b.max_price || b.price) - (a.max_price || a.price));
     if (sort === 'rating') list.sort((a, b) => b.rating - a.rating);
     return list;
   }, [q, cat, sort, maxPrice]);

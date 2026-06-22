@@ -33,14 +33,25 @@ export default function ProductCard({ p, index = 0 }) {
           <span className="text-moss/60">({p.reviews})</span>
           <span className="ml-auto text-moss/70">{p.weight}</span>
         </div>
+        {p.variant_count > 1 && (
+          <div className="mt-1.5 text-[10px] text-olive font-semibold uppercase tracking-wider">Available in {p.variant_count} sizes</div>
+        )}
         <div className="flex items-end justify-between mt-3">
           <div>
-            <div className="text-xl font-bold text-forest">₹{p.price}</div>
+            <div className="text-xl font-bold text-forest">
+              {p.variant_count > 1 && p.min_price !== p.max_price ? <>From ₹{p.min_price}</> : <>₹{p.price}</>}
+            </div>
             {p.mrp > p.price && <div className="text-xs text-moss/60 line-through">₹{p.mrp}</div>}
           </div>
-          <button onClick={(e) => { e.preventDefault(); add(p, 1); }} className="w-10 h-10 rounded-full bg-forest text-cream hover:bg-olive transition flex items-center justify-center group/btn">
-            <ShoppingCart className="w-4 h-4 group-hover/btn:scale-125 transition" />
-          </button>
+          {p.variant_count > 1 ? (
+            <Link href={`/product/${p.id}`} onClick={(e) => e.stopPropagation()} className="px-3 h-10 rounded-full bg-forest text-cream hover:bg-olive transition flex items-center text-xs font-semibold">
+              Select size
+            </Link>
+          ) : (
+            <button onClick={(e) => { e.preventDefault(); add(p, 1); }} className="w-10 h-10 rounded-full bg-forest text-cream hover:bg-olive transition flex items-center justify-center group/btn">
+              <ShoppingCart className="w-4 h-4 group-hover/btn:scale-125 transition" />
+            </button>
+          )}
         </div>
       </div>
     </motion.div>

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
 import { Leaf, ShieldCheck, Truck, Sprout, Heart, ChevronRight, Star, Quote, ArrowRight, Search, Zap } from 'lucide-react';
-import { PRODUCTS, CATEGORIES, CATEGORY_IMAGES, CATEGORY_ICONS } from '@/lib/products';
+import { PRODUCTS, CATEGORIES, CATEGORY_IMAGES, CATEGORY_ICONS, getGroupedProducts } from '@/lib/products';
 import ProductCard from '@/components/ProductCard';
 
 const HERO_IMG = 'https://images.pexels.com/photos/16970055/pexels-photo-16970055.jpeg?auto=compress&cs=tinysrgb&w=2000';
