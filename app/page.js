@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
+
 import {
   Leaf,
   ShieldCheck,
@@ -26,20 +27,17 @@ import {
 
 import ProductCard from '@/components/ProductCard';
 
+
 // ============================================================
 // IMAGES
 // ============================================================
 
-// Hero image
 const HERO_IMG =
   'https://images.pexels.com/photos/16970055/pexels-photo-16970055.jpeg?auto=compress&cs=tinysrgb&w=2000';
 
-// About section placeholder
-// Replace this with your own image later.
-// Example: '/products/about-banner.jpg'
-const ABOUT_IMAGE = '/products/farm2.jpg';
+const ABOUT_IMAGE =
+  '/products/farm2.jpg';
 
-// Newsletter / CTA image
 const FAMILY_IMG =
   'https://images.unsplash.com/photo-1615743837666-21eb0cc0f342?w=1200&q=80';
 
@@ -59,10 +57,48 @@ function Counter({ to, suffix = '+' }) {
 
 
 // ============================================================
+// HOMEPAGE PRODUCT SELECTION
+// ============================================================
+
+// First product section.
+// Intentionally selected from different categories so the homepage
+// does not show eight versions of rice.
+const featuredNames = [
+  'Rajamudi Rice Unpolished',
+  'Black Sesame',
+  'Groundnut Oil',
+  'Sorghum Flour',
+];
+
+const featured = featuredNames
+  .map((name) => PRODUCTS.find((p) => p.name === name))
+  .filter(Boolean);
+
+
+// Second product section.
+// A varied pantry collection.
+const pantryNames = [
+  'Horse Gram',
+  'Jaggery Powder',
+  'Rock Salt',
+  'Avani Almonds',
+  'Black Pepper',
+  'Chia Seeds',
+  'Red Avalakki Thick',
+  'Milking — Malai Paneer',
+];
+
+const pantryProducts = pantryNames
+  .map((name) => PRODUCTS.find((p) => p.name === name))
+  .filter(Boolean);
+
+
+// ============================================================
 // HOME PAGE
 // ============================================================
 
 export default function HomePage() {
+
   const heroRef = useRef(null);
 
   const { scrollYProgress } = useScroll({
@@ -82,15 +118,10 @@ export default function HomePage() {
     [1, 0]
   );
 
-  // First 8 products
-  const featured = PRODUCTS.slice(0, 8);
-
-  // Since badges/discounts were removed from products.js,
-  // use another group of products for Customer Favorites.
-  const favorites = PRODUCTS.slice(8, 16);
 
   return (
     <div className="overflow-hidden">
+
 
       {/* ======================================================
           HERO
@@ -105,6 +136,7 @@ export default function HomePage() {
           style={{ y, opacity }}
           className="absolute inset-0"
         >
+
           <img
             src={HERO_IMG}
             alt="Organic farm"
@@ -112,12 +144,14 @@ export default function HomePage() {
           />
 
           <div className="absolute inset-0 bg-gradient-to-b from-forestDark/40 via-forestDark/20 to-cream" />
+
         </motion.div>
 
 
         {/* Floating decorative elements */}
 
         {[...Array(6)].map((_, i) => (
+
           <motion.div
             key={i}
             initial={{ y: 0 }}
@@ -139,6 +173,7 @@ export default function HomePage() {
           >
             ✨
           </motion.div>
+
         ))}
 
 
@@ -160,9 +195,11 @@ export default function HomePage() {
             }}
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cream/90 text-forest text-xs font-semibold uppercase tracking-wider mb-6"
           >
+
             <Leaf className="w-3.5 h-3.5" />
 
             100% Organic • Karnataka Farmers • Since 2008
+
           </motion.div>
 
 
@@ -181,12 +218,15 @@ export default function HomePage() {
             }}
             className="font-display text-5xl md:text-7xl lg:text-8xl text-cream leading-[0.95] text-balance drop-shadow-2xl"
           >
+
             Pure. Organic.
+
             <br />
 
             <span className="italic text-gold">
               From the Earth.
             </span>
+
           </motion.h1>
 
 
@@ -205,13 +245,15 @@ export default function HomePage() {
             }}
             className="mt-6 text-lg md:text-xl text-cream/90 max-w-2xl mx-auto"
           >
+
             Heirloom rice, ancient millets, cold-pressed oils &
             farm-fresh goodness — grown by 11,000+ Karnataka
             farmers, delivered straight to your home.
+
           </motion.p>
 
 
-          {/* Buttons */}
+          {/* Hero buttons */}
 
           <motion.div
             initial={{
@@ -233,9 +275,11 @@ export default function HomePage() {
               href="/shop"
               className="btn-glow group bg-gold text-forestDark font-semibold rounded-full px-8 py-4 flex items-center gap-2 hover:bg-cream"
             >
+
               Shop Now
 
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+
             </Link>
 
 
@@ -243,7 +287,9 @@ export default function HomePage() {
               href="/#categories"
               className="backdrop-blur bg-cream/10 border border-cream/30 text-cream rounded-full px-8 py-4 hover:bg-cream/20 transition font-medium"
             >
+
               Explore Categories
+
             </Link>
 
           </motion.div>
@@ -299,12 +345,16 @@ export default function HomePage() {
           <div className="flex animate-marquee whitespace-nowrap">
 
             {[0, 1].map((_, k) => (
+
               <span
                 key={k}
                 className="px-4 text-sm tracking-wide"
               >
+
                 ✨ 100% Organic Certified • 🌾 Heirloom Varieties • 🚜 Direct from Farmers • 🌿 Zero Chemicals • ✨ Free Shipping above ₹999 • 🍒 Fresh Harvest •
+
               </span>
+
             ))}
 
           </div>
@@ -343,14 +393,19 @@ export default function HomePage() {
           </div>
 
           <h2 className="font-display text-4xl md:text-5xl text-forest">
+
             From farm{' '}
+
             <span className="italic">
               to your kitchen
             </span>
+
           </h2>
 
           <p className="text-moss/80 mt-3 max-w-xl mx-auto">
+
             Explore 12 categories of farm-fresh organic goodness
+
           </p>
 
         </motion.div>
@@ -391,9 +446,11 @@ export default function HomePage() {
 
                 <div className="absolute inset-0 bg-gradient-to-t from-forestDark/90 via-forestDark/30 to-transparent" />
 
+
                 <div className="absolute top-3 right-3 text-3xl group-hover:scale-125 transition">
                   {CATEGORY_ICONS[c]}
                 </div>
+
 
                 <div className="absolute bottom-4 left-4 right-4 text-cream">
 
@@ -402,8 +459,11 @@ export default function HomePage() {
                   </div>
 
                   <div className="flex items-center gap-1 mt-1 text-xs opacity-80 group-hover:opacity-100 group-hover:translate-x-1 transition">
+
                     Shop now
+
                     <ChevronRight className="w-3 h-3" />
+
                   </div>
 
                 </div>
@@ -420,20 +480,19 @@ export default function HomePage() {
 
 
       {/* ======================================================
-          ABOUT / IMAGE PLACEHOLDER
+          OUR STORY
       ====================================================== */}
 
       <section className="py-24 bg-beige/40 relative overflow-hidden">
-
-        {/* Decorative background */}
 
         <div className="absolute -top-20 -right-20 w-96 h-96 bg-olive/10 rounded-full blur-3xl" />
 
         <div className="container relative">
 
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
-            {/* IMAGE PLACEHOLDER */}
+
+            {/* Image */}
 
             <motion.div
               initial={{
@@ -447,25 +506,23 @@ export default function HomePage() {
               viewport={{
                 once: true,
               }}
-              className="relative"
+              className="relative w-full"
             >
 
-              <div className="relative overflow-hidden rounded-3xl shadow-xl bg-beige aspect-[4/3]">
+              <div className="relative overflow-hidden rounded-3xl shadow-xl w-full aspect-[16/10] bg-beige">
 
                 <img
                   src={ABOUT_IMAGE}
-                  alt="Avani Organics"
+                  alt="Avani Organics farmers"
                   className="w-full h-full object-cover"
                 />
-
-                
 
               </div>
 
             </motion.div>
 
 
-            {/* ABOUT TEXT */}
+            {/* Story */}
 
             <motion.div
               initial={{
@@ -479,65 +536,85 @@ export default function HomePage() {
               viewport={{
                 once: true,
               }}
+              className="w-full"
             >
 
               <div className="text-xs tracking-[0.3em] uppercase text-olive mb-3">
                 Our Story
               </div>
 
+
               <h2 className="font-display text-4xl md:text-5xl text-forest leading-tight">
+
                 AVANI means{' '}
+
                 <span className="italic">
                   Earth.
                 </span>
+
               </h2>
 
+
               <p className="text-moss/80 mt-5 leading-relaxed">
+
                 Avani Organics is a brand promoted by{' '}
-                <b>BHOOMI Sustainable Development Society</b>.
+
+                <b>
+                  BHOOMI Sustainable Development Society
+                </b>.
+
                 We work hand-in-hand with 11,000+ rural farming
                 families across 8 districts of Karnataka —
                 supporting organic farming, soil & water
                 conservation, and the rearing of native livestock
                 breeds.
+
               </p>
 
+
               <p className="text-moss/80 mt-4 leading-relaxed">
+
                 From seed to your kitchen, every grain carries a
                 farmer's promise.
+
               </p>
 
 
               {/* Stats */}
 
-              <div className="grid grid-cols-3 gap-6 mt-10">
+              <div className="grid grid-cols-3 gap-5 mt-10">
 
-                {[
-                  {
-                    n: 11000,
-                    l: 'Farming Families',
-                  },
-                  {
-                    n: 8750,
-                    l: 'Acres Organic Land',
-                  },
-                  {
-                    n: 400,
-                    l: 'Retail Partners',
-                  },
-                ].map((s) => (
+                <div>
 
-                  <div key={s.l}>
+                  <Counter to={11000} />
 
-                    <Counter to={s.n} />
-
-                    <div className="text-xs uppercase tracking-wider text-moss mt-1">
-                      {s.l}
-                    </div>
-
+                  <div className="text-xs uppercase tracking-wider text-moss mt-1">
+                    Farming Families
                   </div>
 
-                ))}
+                </div>
+
+
+                <div>
+
+                  <Counter to={8750} />
+
+                  <div className="text-xs uppercase tracking-wider text-moss mt-1">
+                    Acres Organic Land
+                  </div>
+
+                </div>
+
+
+                <div>
+
+                  <Counter to={400} />
+
+                  <div className="text-xs uppercase tracking-wider text-moss mt-1">
+                    Retail Partners
+                  </div>
+
+                </div>
 
               </div>
 
@@ -546,9 +623,11 @@ export default function HomePage() {
                 href="/about"
                 className="inline-flex items-center gap-2 mt-8 text-forest font-semibold border-b-2 border-gold pb-1 hover:gap-3 transition-all"
               >
+
                 Know more about us
 
                 <ArrowRight className="w-4 h-4" />
+
               </Link>
 
             </motion.div>
@@ -571,15 +650,25 @@ export default function HomePage() {
           <div>
 
             <div className="text-xs tracking-[0.3em] uppercase text-olive mb-3">
-              Featured
+              A little taste of Avani
             </div>
 
             <h2 className="font-display text-4xl md:text-5xl text-forest">
-              Our products{' '}
+
+              Everyday essentials,
+
               <span className="italic">
-                this season
+                {' '}done better.
               </span>
+
             </h2>
+
+            <p className="text-moss/80 mt-3 max-w-xl">
+
+              A few of our pantry staples — organically grown,
+              thoughtfully sourced, and ready for your kitchen.
+
+            </p>
 
           </div>
 
@@ -588,21 +677,26 @@ export default function HomePage() {
             href="/shop"
             className="text-forest font-semibold hover:text-olive flex items-center gap-2"
           >
-            View all
+
+            Explore the pantry
+
             <ArrowRight className="w-4 h-4" />
+
           </Link>
 
         </div>
 
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
 
           {featured.map((p, i) => (
+
             <ProductCard
               key={p.id}
               p={p}
               index={i}
             />
+
           ))}
 
         </div>
@@ -623,6 +717,7 @@ export default function HomePage() {
 
         <div className="absolute -top-20 left-10 w-72 h-72 bg-olive/20 rounded-full blur-3xl" />
 
+
         <div className="container relative">
 
           <div className="text-center mb-14">
@@ -632,10 +727,13 @@ export default function HomePage() {
             </div>
 
             <h2 className="font-display text-4xl md:text-5xl">
+
               Goodness you can{' '}
+
               <span className="italic text-gold">
                 taste & trust
               </span>
+
             </h2>
 
           </div>
@@ -679,6 +777,7 @@ export default function HomePage() {
               const Icon = f.icon;
 
               return (
+
                 <motion.div
                   key={f.t}
                   initial={{
@@ -707,15 +806,18 @@ export default function HomePage() {
 
                   </div>
 
+
                   <div className="font-display text-xl">
                     {f.t}
                   </div>
+
 
                   <div className="text-xs text-cream/70 mt-1">
                     {f.d}
                   </div>
 
                 </motion.div>
+
               );
 
             })}
@@ -728,40 +830,74 @@ export default function HomePage() {
 
 
       {/* ======================================================
-          CUSTOMER FAVORITES
+          THE AVANI PANTRY
       ====================================================== */}
 
-      <section className="py-24 container">
+      <section className="py-24 bg-beige/40 relative overflow-hidden">
 
-        <div className="flex flex-wrap items-end justify-between mb-12 gap-4">
+        <div className="absolute -top-32 -left-32 w-96 h-96 bg-gold/10 rounded-full blur-3xl" />
 
-          <div>
 
-            <div className="text-xs tracking-[0.3em] uppercase text-olive mb-3">
-              Top Picks
+        <div className="container relative">
+
+          <div className="flex flex-wrap items-end justify-between mb-12 gap-4">
+
+            <div>
+
+              <div className="text-xs tracking-[0.3em] uppercase text-olive mb-3">
+                Stock your pantry
+              </div>
+
+
+              <h2 className="font-display text-4xl md:text-5xl text-forest">
+
+                The Avani{' '}
+
+                <span className="italic">
+                  pantry
+                </span>
+
+              </h2>
+
+
+              <p className="text-moss/80 mt-3 max-w-xl">
+
+                From breakfast staples to everyday spices and
+                nourishing superfoods — discover the things
+                you'll reach for again and again.
+
+              </p>
+
             </div>
 
-            <h2 className="font-display text-4xl md:text-5xl text-forest">
-              Customer{' '}
-              <span className="italic">
-                favorites
-              </span>
-            </h2>
+
+            <Link
+              href="/shop"
+              className="inline-flex items-center gap-2 text-forest font-semibold border-b-2 border-gold pb-1 hover:gap-3 transition-all"
+            >
+
+              Shop everything
+
+              <ArrowRight className="w-4 h-4" />
+
+            </Link>
 
           </div>
 
-        </div>
 
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+            {pantryProducts.map((p, i) => (
 
-          {favorites.map((p, i) => (
-            <ProductCard
-              key={p.id}
-              p={p}
-              index={i}
-            />
-          ))}
+              <ProductCard
+                key={p.id}
+                p={p}
+                index={i}
+              />
+
+            ))}
+
+          </div>
 
         </div>
 
@@ -772,7 +908,7 @@ export default function HomePage() {
           TESTIMONIALS
       ====================================================== */}
 
-      <section className="py-24 bg-beige/40 relative overflow-hidden">
+      <section className="py-24 relative overflow-hidden">
 
         <div className="container">
 
@@ -782,11 +918,15 @@ export default function HomePage() {
               Loved by Families
             </div>
 
+
             <h2 className="font-display text-4xl md:text-5xl text-forest">
+
               What our customers{' '}
+
               <span className="italic">
                 say
               </span>
+
             </h2>
 
           </div>
@@ -801,18 +941,21 @@ export default function HomePage() {
                 r: 5,
                 t: 'The Rajamudi rice is incredible. My family loves the aroma and taste. Reminds me of my grandmother’s kitchen.',
               },
+
               {
                 n: 'Anand Kumar',
                 loc: 'Mysuru',
                 r: 5,
                 t: 'Switched my entire pantry to Avani. The cold-pressed coconut oil is the real deal — you can taste the difference.',
               },
+
               {
                 n: 'Lakshmi Iyer',
                 loc: 'Chennai',
                 r: 5,
                 t: 'I love that I’m supporting Karnataka farmers directly. Packaging is gorgeous and the millets are top quality.',
               },
+
             ].map((t, i) => (
 
               <motion.div
@@ -840,25 +983,32 @@ export default function HomePage() {
                 <div className="flex gap-1 mb-3">
 
                   {[...Array(t.r)].map((_, k) => (
+
                     <Star
                       key={k}
                       className="w-4 h-4 fill-gold text-gold"
                     />
+
                   ))}
 
                 </div>
 
 
                 <p className="text-forest/80 leading-relaxed italic">
+
                   “{t.t}”
+
                 </p>
 
 
                 <div className="mt-5 flex items-center gap-3">
 
                   <div className="w-10 h-10 rounded-full bg-forest text-cream flex items-center justify-center font-bold">
+
                     {t.n[0]}
+
                   </div>
+
 
                   <div>
 
@@ -886,7 +1036,7 @@ export default function HomePage() {
 
 
       {/* ======================================================
-          NEWSLETTER / CTA
+          FINAL CTA
       ====================================================== */}
 
       <section className="py-24 container">
@@ -912,6 +1062,7 @@ export default function HomePage() {
             className="absolute inset-0 w-full h-full object-cover opacity-30"
           />
 
+
           <div className="absolute inset-0 bg-gradient-to-r from-forestDark via-forestDark/80 to-transparent" />
 
 
@@ -919,17 +1070,26 @@ export default function HomePage() {
 
             <Zap className="w-8 h-8 text-gold mb-4" />
 
+
             <h2 className="font-display text-4xl md:text-5xl leading-tight">
-              Get{' '}
+
+              Bring the{' '}
+
               <span className="italic text-gold">
-                10% off
+                goodness
               </span>{' '}
-              your first organic order
+
+              home.
+
             </h2>
 
+
             <p className="mt-4 text-cream/80">
-              Subscribe for farm stories, seasonal recipes &
-              exclusive offers delivered right to your inbox.
+
+              Discover organic staples grown with care,
+              sourced directly from Karnataka farming families,
+              and delivered to your kitchen.
+
             </p>
 
 
@@ -937,9 +1097,11 @@ export default function HomePage() {
               href="/shop"
               className="inline-flex items-center gap-2 mt-8 bg-gold text-forestDark font-semibold px-7 py-3.5 rounded-full hover:bg-cream transition btn-glow"
             >
+
               Start Shopping
 
               <ArrowRight className="w-4 h-4" />
+
             </Link>
 
           </div>
@@ -947,6 +1109,7 @@ export default function HomePage() {
         </motion.div>
 
       </section>
+
 
     </div>
   );
