@@ -1,55 +1,132 @@
+
 'use client';
+
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Star, Zap } from 'lucide-react';
+import { ShoppingCart, Star } from 'lucide-react';
 import { useCart } from '@/lib/cart-context';
 
 export default function ProductCard({ p, index = 0 }) {
   const { add } = useCart();
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-50px' }}
-      transition={{ duration: 0.5, delay: (index % 8) * 0.05 }}
-      className="group card-hover bg-white rounded-2xl overflow-hidden border border-beige/60"
+      transition={{
+        duration: 0.45,
+        delay: (index % 8) * 0.04,
+      }}
+      className="group card-hover overflow-hidden rounded-2xl border border-beige/60 bg-white"
     >
-      <Link href={`/product/${p.id}`} className="block relative overflow-hidden aspect-square bg-beige">
-        <img src={p.image} alt={p.name} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition duration-700" />
-        {p.badge && <span className="absolute top-3 left-3 bg-forest text-cream text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">{p.badge}</span>}
-        {p.discount > 0 && <span className="absolute top-3 right-3 bg-terracotta text-cream text-xs font-bold px-2.5 py-1 rounded-full">-{p.discount}%</span>}
-        <div className="absolute inset-x-0 bottom-0 p-3 translate-y-full group-hover:translate-y-0 transition">
-          <div className="glass rounded-xl px-3 py-2 flex items-center justify-between gap-2">
-            <span className="text-xs text-forest font-semibold">Quick view</span>
+      {/* Product image */}
+      <Link
+        href={`/product/${p.id}`}
+        className="relative block aspect-square overflow-hidden bg-[#f8f6ef]"
+      >
+        <div className="flex h-full w-full items-center justify-center">
+          <img
+            src={p.image}
+            alt={p.name}
+            loading="lazy"
+            className="h-full w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+          />
+        </div>
+
+        {/* Product badge */}
+        {p.badge && (
+          <span className="absolute left-3 top-3 rounded-full bg-forest px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-cream">
+            {p.badge}
+          </span>
+        )}
+
+        {/* Discount badge */}
+        {p.discount > 0 && (
+          <span className="absolute right-3 top-3 rounded-full bg-terracotta px-2.5 py-1 text-xs font-bold text-cream">
+            -{p.discount}%
+          </span>
+        )}
+
+        {/* Quick view */}
+        <div className="absolute inset-x-3 bottom-3 translate-y-3 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+          <div className="glass flex items-center justify-between gap-2 rounded-xl px-3 py-2">
+            <span className="text-xs font-semibold text-forest">
+              View product
+            </span>
             <span className="text-xs text-moss">→</span>
           </div>
         </div>
       </Link>
+
+      {/* Product information */}
       <div className="p-4">
-        <div className="text-[10px] uppercase tracking-widest text-moss/70 mb-1">{p.category}</div>
-        <Link href={`/product/${p.id}`} className="font-medium text-forest line-clamp-2 hover:text-olive transition min-h-[3rem] block">{p.name}</Link>
-        <div className="flex items-center gap-1 mt-2 text-xs text-moss">
-          <Star className="w-3 h-3 fill-gold text-gold" /> {p.rating.toFixed(1)}
-          <span className="text-moss/60">({p.reviews})</span>
-          <span className="ml-auto text-moss/70">{p.weight}</span>
+        <div className="mb-1 text-[10px] uppercase tracking-widest text-moss/70">
+          {p.category}
         </div>
+
+        <Link
+          href={`/product/${p.id}`}
+          className="block min-h-[3rem] line-clamp-2 font-medium text-forest transition hover:text-olive"
+        >
+          {p.name}
+        </Link>
+
+        {/* Rating and weight */}
+        <div className="mt-2 flex items-center gap-1 text-xs text-moss">
+          <Star className="h-3 w-3 fill-gold text-gold" />
+          <span>{p.rating.toFixed(1)}</span>
+
+          <span className="text-moss/60">
+            ({p.reviews})
+          </span>
+
+          <span className="ml-auto whitespace-nowrap text-moss/70">
+            {p.weight}
+          </span>
+        </div>
+
+        {/* Variants */}
         {p.variant_count > 1 && (
-          <div className="mt-1.5 text-[10px] text-olive font-semibold uppercase tracking-wider">Available in {p.variant_count} sizes</div>
-        )}
-        <div className="flex items-end justify-between mt-3">
-          <div>
-            <div className="text-xl font-bold text-forest">
-              {p.variant_count > 1 && p.min_price !== p.max_price ? <>From ₹{p.min_price}</> : <>₹{p.price}</>}
-            </div>
-            {p.mrp > p.price && <div className="text-xs text-moss/60 line-through">₹{p.mrp}</div>}
+          <div className="mt-1.5 text-[10px] font-semibold uppercase tracking-wider text-olive">
+            Available in {p.variant_count} sizes
           </div>
+        )}
+
+        {/* Price and action */}
+        <div className="mt-3 flex items-end justify-between gap-2">
+          <div className="min-w-0">
+            <div className="text-xl font-bold text-forest">
+              {p.variant_count > 1 &&
+              p.min_price !== p.max_price ? (
+                <>From ₹{p.min_price}</>
+              ) : (
+                <>₹{p.price}</>
+              )}
+            </div>
+
+            {p.mrp > p.price && (
+              <div className="text-xs text-moss/60 line-through">
+                ₹{p.mrp}
+              </div>
+            )}
+          </div>
+
           {p.variant_count > 1 ? (
-            <Link href={`/product/${p.id}`} onClick={(e) => e.stopPropagation()} className="px-3 h-10 rounded-full bg-forest text-cream hover:bg-olive transition flex items-center text-xs font-semibold">
+            <Link
+              href={`/product/${p.id}`}
+              className="flex h-10 shrink-0 items-center justify-center rounded-full bg-forest px-3 text-xs font-semibold text-cream transition hover:bg-olive"
+            >
               Select size
             </Link>
           ) : (
-            <button onClick={(e) => { e.preventDefault(); add(p, 1); }} className="w-10 h-10 rounded-full bg-forest text-cream hover:bg-olive transition flex items-center justify-center group/btn">
-              <ShoppingCart className="w-4 h-4 group-hover/btn:scale-125 transition" />
+            <button
+              type="button"
+              aria-label={`Add ${p.name} to cart`}
+              onClick={() => add(p, 1)}
+              className="group/btn flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-forest text-cream transition hover:bg-olive"
+            >
+              <ShoppingCart className="h-4 w-4 transition-transform group-hover/btn:scale-110" />
             </button>
           )}
         </div>
